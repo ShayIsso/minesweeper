@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <title>Minesweeper</title>
+    <link rel="stylesheet" href="css/app.css" />
+</head>
+
+<body onload="onInit()">
+    <h1>ULTIMETE Minesweeper</h1>
+    <div class="game-bar">
+        <h2>Game level:</h2>
+        <div class="buttons-container">
+            <button onclick="setBoard(4)">Beginner</button>
+            <button onclick="setBoard(8)">Medium</button>
+            <button onclick="setBoard(12)">Expert</button>
+        </div>
+        <h2>Life left:</h2>
+        <span class="lives-left">💚💚💚</span>
+    </div>
+    <div class="info">
+        <span class="describe-txt">Shown:</span>
+        <span class="shown-count">0</span>
+        <span class="describe-txt">Time:</span>
+        <span class="timer">00</span>
+        <span class="describe-txt">Marked:</span>
+        <span class="marked-count">0</span>
+    </div>
+
+    <div>
+        <span class="smiley" onclick="onInit()">😃</span>
+    </div>
+
+    <table class="board-container">
+        <tbody class="board"></tbody>
+    </table>
+
+
+    <script src="js/main.js"></script>
+    <script src="js/utils.js"></script>
+</body>
+
+
+</html>
