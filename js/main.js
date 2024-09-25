@@ -3,11 +3,14 @@
 const EMPTY = ' '
 const MINE = '💣'
 const FLAG = '🚩'
-
+const LIGHT_OFF_IMG = 'img/light-off.png'
+const LIGHT_ON_IMG = 'img/light-on.png'
 
 var gBoard
 var gTimerIntrval
 var gStartTime
+var gHintActive
+var gMegaHintActive
 
 const gLevel = {
     SIZE: 4,
@@ -20,9 +23,13 @@ const gGame = {
     markedCount: 0,
     secsPass: 0,
     livesLeft: 3,
+    hintLeft: 3,
+    megaHintCountClick: 0,
 }
 
 function onInit() {
+    clearInterval(gTimerIntrval)
+
     gBoard = buildBoard()
     renderBoard(gBoard)
 
@@ -47,7 +54,7 @@ function setBoard(selectedSize) {
 }
 
 function buildBoard() {
-    const board = [] 
+    const board = []
 
     for (var i = 0; i < gLevel.SIZE; i++) {
         board.push([])
@@ -93,7 +100,18 @@ function onCellClick(elCell, i, j) {
     }
 
     if (cell.isMarked || cell.isShown || !gGame.isOn) return
-    
+
+    if (gMegaHintActive){
+        handleMegaHintClicked({ i, j }, null)
+        setTimeout(() => {
+            gMegaHintActive = false
+        }, 2000)
+    }
+
+    if (gHintActive) {
+        showHint(gBoard, elCell, i, j)
+        return
+    }
 
     if (cell.isMine) {
         gLevel.MINES--
@@ -109,7 +127,7 @@ function onCellClick(elCell, i, j) {
         checkGameOver()
         return
     } else if (cell.minesAroundCount === 0) {
-        expandShow(gBoard, elCell, i, j)
+        expandShow(gBoard, i, j)
         checkGameOver()
         return
 
@@ -154,12 +172,22 @@ function setMinesNegsCount(board) {
             const cell = board[i][j]
 
             if (!cell.isMine) {
-                cell.minesAroundCount = getNeighborsCount(board, i, j)
+                cell.minesAroundCount = countMinesAroundCell(board, i, j)
             }
         }
     }
 }
 
+function countMinesAroundCell(board, rowIdx, colIdx) {
+    var count = 0
+    forEachNeighbor(board, rowIdx, colIdx, (neighborCell) => {
+        if (neighborCell.isMine) {
+            count++
+        }
+    })
+
+    return count
+}
 function getEmptyCells() {
     const emptyCells = []
 
@@ -268,41 +296,94 @@ function resetGame() {
     gGame.markedCount = 0
     gGame.secsPass = 0
     gGame.livesLeft = 3
+    gGame.hintLeft = 3
+
+    gHintActive = false
+    gMegaHintActive = false
 
     resetDisplay()
 }
 
-function expandShow(board, elCell, i, j) {
-    for (var rowIdx = i - 1; rowIdx <= i + 1; rowIdx++) {
-        if (rowIdx < 0 || rowIdx >= board.length) continue
-        for (var colIdx = j - 1; colIdx <= j + 1; colIdx++){
-            if (colIdx < 0 || colIdx >= board[i].length) continue
 
-            const cell = board[rowIdx][colIdx]
-            if (!cell.isShown && !cell.isMarked && !cell.isMine) {
-                const currElCell = document.querySelector(`.cell-${rowIdx}-${colIdx}`) 
-                //Update Model
-                cell.isShown = true
-                updateShownCount()
+function expandShow(board, i, j) {
+    const cell = board[i][j]
+    if (cell.isShown || cell.isMarked || cell.isMine) return
 
-                //Update DOM
-                currElCell.classList.add('selected')
-                currElCell.innerHTML = cell.minesAroundCount || EMPTY
+    //Update Model
+    cell.isShown = true
+    updateShownCount()
 
-                if (cell.minesAroundCount === 0) {
-                    expandShow(board, currElCell, rowIdx, colIdx)
-                }
-            }
-        }
+    //Update DOM
+    const elCell = document.querySelector(`.cell-${i}-${j}`)
+    elCell.classList.add('selected')
+    elCell.innerHTML = cell.minesAroundCount || EMPTY
+
+    if (cell.minesAroundCount === 0) {
+        forEachNeighbor(board, i, j, (neighbor, neighborI, neighborJ) => {
+            expandShow(board, neighborI, neighborJ)
+        })
     }
 }
 
-// function showCell(cell, elCell){
+
+// function showCell(cell, elCell) {
 //     cell.isShown = true
 //     updateShownCount()
 //     elCell.classList.add('selected')
 //     elCell.innerHTML = cell.minesAroundCount || EMPTY
 // }
+
+//Hint 
+
+function handleHintClicked(elHint) {
+    if (gGame.hintLeft <= 0 || !gGame.isOn) return
+
+    gHintActive = true
+    gGame.hintLeft--
+
+    elHint.src = LIGHT_ON_IMG
+}
+
+
+function showHint(board, elCell, i, j) {
+    const cell = board[i][j]
+    //Clicked cell
+    showCellForHint(cell, elCell ,1000)
+
+    forEachNeighbor(board, i, j, (nCell, neighborI, neighborJ) => {
+        const elNeighbor = document.querySelector(`.cell-${neighborI}-${neighborJ}`)
+        showCellForHint(nCell, elNeighbor, 1000)
+    })
+
+    setTimeout(() => {
+        resetHint()
+    }, 1000)
+}
+
+function showCellForHint(cell, elCell, timeToShow) {
+    if (!cell.isShown && !cell.isMarked) {
+        //Update Model
+        cell.isShown = true
+
+
+        //Update DOM
+        elCell.classList.add('selected')
+        elCell.innerHTML = cell.isMine ? MINE : (cell.minesAroundCount || EMPTY)
+
+        setTimeout(() => {
+            cell.isShown = false
+            elCell.classList.remove('selected')
+            elCell.innerHTML = EMPTY
+        }, timeToShow)
+    }
+}
+
+function resetHint() {
+    gHintActive = false
+
+    const elHintImg = document.querySelector('.hint')
+    elHintImg.src = LIGHT_OFF_IMG
+}
 
 // DISPLAY
 
@@ -344,5 +425,46 @@ function updateLives() {
     var str = elLivesleft.innerText
 
     elLivesleft.innerText = str.replace('💚', '')
-    console.log('UPDATEEE')
 }
+
+function handleMegaHintClicked(fromCell, toCell){
+    gGame.megaHintCountClick++
+    if (!gGame.isOn || gGame.megaHintCountClick > 2) return
+
+    gMegaHintActive = true
+    console.log(`megaHintCountClick: ${gGame.megaHintCountClick}`)
+
+    if (gGame.megaHintCountClick === 1) {
+        fromCell = { i: null, j: null }
+    } else if (gGame.megaHintCountClick === 2) {
+        toCell = { i: null, j: null }
+        showMegaHint(fromCell, toCell)
+    }
+ }
+
+function showMegaHint(fromCell, toCell) {
+    const locations = megaHint(fromCell.i, fromCell.j, toCell.i, toCell.j)
+    
+    for (var i = 0; i < locations.length; i++) {
+        console.log('loop locations')
+        const location = locations[i]
+        const cell = gBoard[location.i][location.j]
+        const elLocation = document.querySelector(`.cell-${location.i}-${location.j}`)
+        showCellForHint(cell, elLocation, 2000)
+    }
+
+
+}
+
+function megaHint(startedI, startedJ, endI, endJ) {
+    const locations = []
+
+    for (var i = startedI; i <= endI; i++) {
+        for (var j = startedJ; j <= endJ; j++) {
+            locations.push({cell: gBoard[i,j], i: i, j: j})
+        }
+    }
+    
+    return locations
+}
+

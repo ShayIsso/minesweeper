@@ -1,7 +1,7 @@
 'use strict'
 
-function getNeighborsCount(board, rowIdx, colIdx) {
-    var count = 0
+function getNeighbors(board, rowIdx, colIdx) {
+    const neighbors = []
 
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= board.length) continue
@@ -9,13 +9,44 @@ function getNeighborsCount(board, rowIdx, colIdx) {
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
             if (j < 0 || j >= board[i].length) continue
             if (i === rowIdx && j === colIdx) continue
-            if (board[i][j].isMine) count++
+            neighbors.push({cell: board[i][j], i: i, j: j})
 
         }
     }
 
-    return count
+    return neighbors
 }
+
+function forEachNeighbor(board, rowIdx, colIdx, func) {
+    const neighbors = getNeighbors(board, rowIdx, colIdx)
+
+    for (var i = 0; i < neighbors.length; i++) {
+        const neighbor = neighbors[i]
+
+        func(neighbor.cell, neighbor.i, neighbor.j)
+    }
+}
+
+// const neighbors = getNeighbors(gBoard, 1, 1)
+// console.log('neighbors:', neighbors)
+
+
+// function getNeighborsCount(board, rowIdx, colIdx) {
+//     var count = 0
+
+//     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
+//         if (i < 0 || i >= board.length) continue
+
+//         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
+//             if (j < 0 || j >= board[i].length) continue
+//             if (i === rowIdx && j === colIdx) continue
+//             if (board[i][j].isMine) count++
+
+//         }
+//     }
+
+//     return count
+// }
 
 function getRandomInt(min, max) {
     const minCeiled = Math.ceil(min);
