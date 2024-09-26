@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 function getNeighbors(board, rowIdx, colIdx) {
     const neighbors = []

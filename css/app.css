@@ -115,39 +115,17 @@ button:hover {
     cursor: pointer;
 }
 
+.mega-hint.selected {
+    background-color: rgb(72, 2, 163);
+}
+
 .mega-hint:hover {
     background-color: rgb(72, 2, 163);
 }
 
-img {
+.hint {
     width: 40px;
     position: absolute;
     left: 550px;
     cursor: pointer;
 }
-
-/* 
-h1 {
-    text-align: center;
-}
-
-.board {
-    margin: 20px auto;
-    display: grid;
-    gap: 10px;
-} */
-
-/* .game-bar h2 {
-    display: inline-block;
-    margin-right: 10px;
-    font-family: "VT323", monospace;
-} */
-
-
-
-/* .separator {
-    width: 2px;
-    height: 30px;
-    background-color: #b8a07f; 
-    margin: 0 15px; 
-} */
