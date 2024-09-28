@@ -10,6 +10,7 @@ var gBoard
 var gTimerIntrval
 var gStartTime
 var gMegaHintFirstCell
+var gMoves = []
 
 const gLevel = {
     SIZE: 4,
@@ -30,16 +31,17 @@ const gGame = {
 
 function onInit() {
     clearInterval(gTimerIntrval)
+    gTimerIntrval = null
 
     gBoard = buildBoard()
     renderBoard(gBoard)
 
     resetGame()
-    resetDisplay()
+    renderBestScores()
+    loadBestScores()
 }
 
 //BOARD
-
 function setBoard(selectedSize) {
     gLevel.SIZE = selectedSize
 
@@ -65,7 +67,6 @@ function buildBoard() {
                 isShown: false,
                 isMine: false,
                 isMarked: false,
-                mineClicked: false,
             }
         }
     }
@@ -96,11 +97,13 @@ function onCellClick(elCell, i, j) {
     console.log(`Clicked - i: ${i} j: ${j}`)
     const cell = gBoard[i][j]
 
-    if (gGame.shownCount === 0) {
+    if (gGame.shownCount === 0 && gMoves.length === 0) {
         startGame(i, j)
     }
 
     if (cell.isMarked || cell.isShown || !gGame.isOn) return
+
+    const move = { i, j, expandedCells: [], isMine: cell.isMine }
 
     if (gGame.megaHintActive) {
         showMegaHint(i, j)
@@ -114,23 +117,24 @@ function onCellClick(elCell, i, j) {
 
     if (cell.isMine) {
         handleMineClick(cell, elCell)
-        return
-    } else if (cell.minesAroundCount === 0) {
-        expandShow(gBoard, i, j)
-        checkGameOver()
-        return
+    } else {
+        // Update Model
+        cell.isShown = true
+        updateShownCount(true)
+
+        // Update DOM
+        elCell.classList.add('selected')
+        elCell.innerHTML = cell.minesAroundCount || EMPTY
+
+        if (cell.minesAroundCount === 0) {
+            expandShown(gBoard, i, j, move.expandedCells)
+        }
     }
 
-    // Update Model
-    cell.isShown = true
-    updateShownCount()
-
+    gMoves.push(move)
     checkGameOver()
-
-    // Update DOM
-    elCell.classList.add('selected')
-    elCell.innerHTML = cell.minesAroundCount || EMPTY
 }
+
 
 function onCellMarked(elCell, i, j) {
     console.log(`Right clicked - ${elCell}`)
@@ -157,7 +161,7 @@ function onCellMarked(elCell, i, j) {
 function handleMineClick(cell, elCell) {
     gLevel.MINES--
     cell.isShown = true
-    updateShownCount()
+    updateShownCount(true)
 
     gGame.livesLeft--
     updateLives()
@@ -257,12 +261,13 @@ function checkAllMinesMarked() {
 
 
 // GAME
-
 function startGame(firstClickedI, firstClickedJ) {
-    gGame.isOn = true
-    startTimer()
-    addMines(firstClickedI, firstClickedJ)
-    setMinesNegsCount(gBoard)
+    if (!gGame.isOn) {
+        gGame.isOn = true
+        startTimer()
+        addMines(firstClickedI, firstClickedJ)
+        setMinesNegsCount(gBoard)
+    }
 }
 
 function checkGameOver() {
@@ -281,6 +286,12 @@ function checkGameOver() {
 function gameOver(isWin) {
     clearInterval(gTimerIntrval)
     gGame.isOn = false
+
+    if (isWin) {
+        updateBestScores(gLevel.SIZE)
+        renderBestScores()
+        loadBestScores()
+    }
 
     const elSmiley = document.querySelector('.smiley')
 
@@ -302,41 +313,40 @@ function resetGame() {
 
     gGame.hintActive = false
     gGame.megaHintActive = false
+    gGame.megaHintUsed = false
+    gMoves = []
+
+    if (gLevel.SIZE === 4) gLevel.MINES = 2;
+    else if (gLevel.SIZE === 8) gLevel.MINES = 14;
+    else if (gLevel.SIZE === 12) gLevel.MINES = 32;
 
     resetDisplay()
 }
 
 
-function expandShow(board, i, j) {
-    const cell = board[i][j]
-    if (cell.isShown || cell.isMarked || cell.isMine) return
+function expandShown(board, i, j, expandedCells) {
+    forEachNeighbor(board, i, j, (neighborCell, neighborI, neighborJ) => {
+        if (neighborCell.isShown || neighborCell.isMarked || neighborCell.isMine) return
 
-    //Update Model
-    cell.isShown = true
-    updateShownCount()
+        const elNeighborCell = document.querySelector(`.cell-${neighborI}-${neighborJ}`)
+        expandedCells.push({ i: neighborI, j: neighborJ, elCell: elNeighborCell })
 
-    //Update DOM
-    const elCell = document.querySelector(`.cell-${i}-${j}`)
-    elCell.classList.add('selected')
-    elCell.innerHTML = cell.minesAroundCount || EMPTY
+        //Update Model
+        neighborCell.isShown = true
+        updateShownCount(true)
 
-    if (cell.minesAroundCount === 0) {
-        forEachNeighbor(board, i, j, (neighbor, neighborI, neighborJ) => {
-            expandShow(board, neighborI, neighborJ)
-        })
-    }
+        //Update DOM
+        elNeighborCell.classList.add('selected')
+        elNeighborCell.innerHTML = neighborCell.minesAroundCount || EMPTY
+
+        if (neighborCell.minesAroundCount === 0) {
+            expandShown(board, neighborI, neighborJ, expandedCells)
+        }
+
+    })
 }
 
-
-// function showCell(cell, elCell) {
-//     cell.isShown = true
-//     updateShownCount()
-//     elCell.classList.add('selected')
-//     elCell.innerHTML = cell.minesAroundCount || EMPTY
-// }
-
-//Hint 
-
+//HINT
 function onHintClick(elHint) {
     if (gGame.hintLeft <= 0 || !gGame.isOn) return
 
@@ -388,7 +398,6 @@ function resetHint() {
 }
 
 // MEGA HINT
-
 function onMegaHintClick() {
     if (!gGame.isOn || gGame.megaHintUsed) return
 
@@ -433,18 +442,112 @@ function resetMegaHint() {
     elMegaHint.classList.remove('selected')
 }
 
-// DISPLAY
+// UNDO 
+function onUndoClick() {
+    if (!gGame.isOn || gMoves.length === 0) return
 
+    const lastMove = gMoves.pop()
+    undoMove(lastMove)
+
+    checkGameOver()
+}
+
+function undoMove(move) {
+    const { i, j, expandedCells, isMine } = move
+    const cell = gBoard[i][j]
+    const elCell = document.querySelector(`.cell-${i}-${j}`)
+
+    if (cell.isShown) {
+        //Update Model
+        cell.isShown = false
+        updateShownCount(false)
+
+        //Update DOM
+        elCell.classList.remove('selected')
+        elCell.innerHTML = EMPTY
+
+
+        if (isMine) {
+            //Update Model
+            gLevel.MINES++
+
+            //Update DOM
+            elCell.classList.remove('mine')
+        }
+    }
+
+    if (expandedCells && expandedCells.length > 0) {
+        for (var idx = 0; idx < expandedCells.length; idx++) {
+            const { i, j, elCell } = expandedCells[idx]
+            const exCell = gBoard[i][j]
+            //Update Model
+            exCell.isShown = false
+            updateShownCount(false)
+
+            //Update DOM
+            elCell.classList.remove('selected')
+            elCell.innerHTML = EMPTY
+            // }
+        }
+    }
+
+    // console.log(`UNDO - i: ${i} j: ${j}`);
+}
+
+// LOCAL STORAGE
+function loadBestScores() {
+    const bestBeginnerScore = localStorage.getItem('bestBeginnerScore') || '0'
+    const bestMediumScore = localStorage.getItem('bestMediumScore') || '0'
+    const bestExpertScore = localStorage.getItem('bestExpertScore') || '0'
+
+    document.querySelector('.best-beginner').innerText = bestBeginnerScore
+    document.querySelector('.best-medium').innerText = bestMediumScore
+    document.querySelector('.best-expert').innerText = bestExpertScore
+}
+
+function renderBestScores() {
+    const strHTML = `
+    <h2>Best Scores:</h2>
+    <div class="best-scores-content">
+        <span>Beginner: <span class="best-beginner">0</span></span>
+        <span>Medium: <span class="best-medium">0</span></span>
+        <span>Expert: <span class="best-expert">0</span></span>
+    </div>
+    `
+
+    const elBestScores = document.querySelector('.best-scores')
+    elBestScores.innerHTML = strHTML
+}
+
+function updateBestScores(levelSize) {
+    console.log('updating best scores..')
+    console.log('best scores', gGame.secsPass)
+    var bestScoreKey
+
+    if (levelSize === 4) bestScoreKey = 'bestBeginnerScore'
+    else if (levelSize === 8) bestScoreKey = 'bestMediumScore'
+    else if (levelSize === 12) bestScoreKey = 'bestExpertScore'
+
+    const currentBestScore = +(localStorage.getItem(bestScoreKey)) || 0
+
+    if (gGame.secsPass < currentBestScore || currentBestScore === 0) {
+        localStorage.setItem(bestScoreKey, gGame.secsPass)
+    }
+}
+
+// DISPLAY
 function resetDisplay() {
     const elTimer = document.querySelector('.timer')
     const elShownCount = document.querySelector('.shown-count')
     const elMarkedCount = document.querySelector('.marked-count')
     const elSmiley = document.querySelector('.smiley')
+    const elLivesleft = document.querySelector('.lives-left')
 
     elShownCount.innerText = gGame.shownCount
     elMarkedCount.innerText = gGame.markedCount
     elSmiley.innerText = '😃'
     elTimer.innerText = '00'
+    elLivesleft.innerText = '💚💚💚'
 }
 
 
@@ -459,11 +562,14 @@ function updateDisplay() {
 
 function startTimer() {
     gStartTime = Date.now()
-    gTimerIntrval = setInterval(updateDisplay, 1000)
+    if (!gTimerIntrval) {
+        gTimerIntrval = setInterval(updateDisplay, 1000)
+    }
 }
 
-function updateShownCount() {
-    gGame.shownCount++
+function updateShownCount(increase) {
+    increase ? gGame.shownCount++ : gGame.shownCount--
+
     const elShownCount = document.querySelector('.shown-count')
     elShownCount.innerText = gGame.shownCount
 }
@@ -473,4 +579,19 @@ function updateLives() {
     var str = elLivesleft.innerText
 
     elLivesleft.innerText = str.replace('💚', '')
+}
+
+
+// Dark Mode
+function toggleDarkMode() {
+    const elBody = document.body
+    const elThemeIcon = document.querySelector('.theme-switch')
+
+    elBody.classList.toggle('darkmode')
+
+    if (elBody.classList.contains('darkmode')) {
+        elThemeIcon.src = 'img/darkmode.png'
+    } else {
+        elThemeIcon.src = 'img/lightmode.png'
+    }
 }

@@ -2,18 +2,43 @@ body {
     background-color: lightgrey;
     font-family: "VT323", monospace;
     text-align: center;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.board-container {
-    text-align: center;
-    padding: 40px;
+h1 {
+    margin-bottom: 20px;
+}
+.game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+    max-width: 800px;
 }
 
-.info, .game-bar{
+.game-area {
+    width: 100%;
+}
+
+.board-container {
+    margin: 20px auto;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 20px 0;
+    position: relative;
+    height: 50px; 
+}
+
+.game-bar, .info {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -21,9 +46,8 @@ body {
     padding: 10px 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-    margin: 10px auto;
-    width: 100%;
-    max-width: 600px;
+    margin: 10px 0;
+    color: white;
 }
 
 .describe-txt {
@@ -31,18 +55,22 @@ body {
     color: rgba(0, 255, 21, 0.528);
     font-weight: bold;
     margin: 0 5px;
-    text-shadow: 1px 1px #369351;;
+    text-shadow: 1px 1px #369351;
+    ;
 }
 
-.timer, .marked-count, .shown-count {
+.timer,
+.marked-count,
+.shown-count {
     font-size: 24px;
     font-weight: bold;
 }
 
 .board {
+    margin: 0 auto;
+    border-collapse: collapse;
     margin-top: 20px auto;
     border-collapse: collapse;
-    background-color: #808080;
     border: 3px solid #808080;
 }
 
@@ -76,11 +104,9 @@ body {
     background-color: #FFCCCB;
 }
 
-.buttons-conteiner {
+.buttons-container {
     display: flex;
-    justify-content: 10px;
-    gap: 20px;
-    margin-top: 20px;
+    gap: 10px;
 }
 
 button {
@@ -102,17 +128,24 @@ button:hover {
     background-color: grey;
 }
 
+.mega-hint, .hint, .undo {
+    position: absolute;
+}
+
 .smiley {
     font-size: 24px;
     cursor: pointer;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .mega-hint {
     font-size: 20px;
     background-color: rgb(121, 15, 243);
-    position: absolute;
-    right: 550px;
     cursor: pointer;
+    position: absolute;
+    left: calc(50% - 180px);
 }
 
 .mega-hint.selected {
@@ -125,7 +158,169 @@ button:hover {
 
 .hint {
     width: 40px;
-    position: absolute;
-    left: 550px;
     cursor: pointer;
+    position: absolute;
+    left: calc(50% - 250px);
+}
+
+.undo {
+    font-size: 20px;
+    background-color: rgb(177, 93, 37);
+    cursor: pointer;
+    position: absolute;
+    right: calc(50% - 150px);
+}
+
+.undo.selected {
+    background-color: rgb(143, 64, 12);
+    ;
+}
+
+.undo:hover {
+    background-color: rgb(143, 64, 12);
+    ;
+}
+
+.sidebar {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 10px;
+}
+
+.mega-hint, .undo {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+}
+
+.mega-hint:hover, .undo:hover {
+    opacity: 0.8;
+}
+
+.best-scores {
+    background-color: #369351;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    color: white;
+    text-align: center;
+    font-family: "VT323", monospace;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.best-scores h2 {
+    font-size: 24px;
+    margin: 0;
+    color: rgba(0, 255, 21, 0.528);
+    text-shadow: 1px 1px #369351;
+    margin-right: 10px;
+}
+
+.best-scores-content {
+    display: flex;
+    gap: 20px;
+}
+
+.best-scores-content span {
+    font-weight: bold;
+}
+
+
+/* Dark mode styles */
+.theme-switch {
+    height: 50px;
+    width: 50px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+}
+
+body.darkmode {
+    background-color: #070b1d;
+    color: floralwhite;
+}
+
+body.darkmode .info,
+body.darkmode .game-bar {
+    background-color: #1f4028;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+body.darkmode .describe-txt {
+    color: rgba(0, 255, 180, 0.8);
+    text-shadow: 1px 1px #1f4028;
+}
+
+body.darkmode .board {
+    background-color: #505050;
+    border-color: #505050;
+}
+
+body.darkmode .board td {
+    background-color: rgba(0, 255, 180, 0.4);
+    border-color: #707070;
+    color: white;
+}
+
+body.darkmode .board td:hover {
+    background-color: #1f4028;
+}
+
+body.darkmode .board td.selected {
+    background-color: #1f4028;
+    color: white;
+}
+
+body.darkmode .board td.mine {
+    background-color: darkred;
+}
+
+body.darkmode .buttons-conteiner button {
+    background-color: #303030;
+    color: floralwhite;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+}
+
+body.darkmode .buttons-conteiner button:hover {
+    background-color: #505050;
+}
+
+body.darkmode .mega-hint {
+    background-color: rgb(60, 10, 160);
+}
+
+body.darkmode .mega-hint.selected {
+    background-color: rgb(40, 2, 100);
+}
+
+body.darkmode .hint {
+    background-color: #303030;
+}
+
+body.darkmode .undo {
+    background-color: rgb(120, 50, 20);
+}
+
+body.darkmode .undo.selected {
+    background-color: rgb(80, 30, 10);
+}
+
+body.darkmode .best-scores {
+    background-color: #1f4028;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+body.darkmode .best-scores h2 {
+    color: rgba(0, 255, 180, 0.8);
+    text-shadow: 1px 1px #1f4028;
 }
